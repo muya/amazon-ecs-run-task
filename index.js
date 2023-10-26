@@ -164,9 +164,9 @@ async function run() {
      * Useful for later using `aws ecs describe-task-definition` to get the full ARN,
      * since outputting full ARN can be misinterpreted as a secret by Github Actions.
      */
-    const regex = new RegExp('/task-definition/([A-Z0-9-_]+):([0-9]+)/');
-    const matches = 'https://vine.co/v/Mipm1LMKVqJ/embed'.match(regex);
-    core.setOutput('task-definition-family-and-revision', `${matches[1]}:${matches[2]}`)
+    const regex = new RegExp(':task-definition/(.*)$');
+    const matches = taskDefRevisionArn.match(regex);
+    core.setOutput('task-definition-family-and-revision', matches[1])
 
     const clusterName = cluster ? cluster : 'default';
 

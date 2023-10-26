@@ -63,7 +63,7 @@ describe('Deploy to ECS', () => {
         mockEcsRegisterTaskDef.mockImplementation(() => {
             return {
                 promise() {
-                    return Promise.resolve({ taskDefinition: { taskDefinitionArn: 'task:def:arn' } });
+                    return Promise.resolve({ taskDefinition: { taskDefinitionArn: 'task:def:arn:task-definition/task-def-family:1' } });
                 }
             };
         });
@@ -132,10 +132,11 @@ describe('Deploy to ECS', () => {
         await run();
         expect(core.setFailed).toHaveBeenCalledTimes(0);
         expect(mockEcsRegisterTaskDef).toHaveBeenNthCalledWith(1, { family: 'task-def-family'});
-        expect(core.setOutput).toHaveBeenNthCalledWith(1, 'task-definition-arn', 'task:def:arn');
+        expect(core.setOutput).toBeCalledWith('task-definition-arn', 'task:def:arn:task-definition/task-def-family:1');
+        expect(core.setOutput).toBeCalledWith('task-definition-family-and-revision', 'task-def-family:1');
         expect(mockRunTasks).toHaveBeenNthCalledWith(1, {
             cluster: 'cluster-789',
-            taskDefinition: 'task:def:arn',
+            taskDefinition: 'task:def:arn:task-definition/task-def-family:1',
             count: '1',
             startedBy: 'amazon-ecs-run-task-for-github-actions',
             networkConfiguration: {
@@ -166,13 +167,15 @@ describe('Deploy to ECS', () => {
         expect(core.setFailed).toHaveBeenCalledTimes(0);
 
         expect(mockEcsRegisterTaskDef).toHaveBeenNthCalledWith(1, { family: 'task-def-family'});
-        expect(core.setOutput).toHaveBeenNthCalledWith(1, 'task-definition-arn', 'task:def:arn');
+        expect(core.setOutput).toBeCalledWith('task-definition-arn', 'task:def:arn:task-definition/task-def-family:1');
+        expect(core.setOutput).toBeCalledWith('task-definition-family-and-revision', 'task-def-family:1');
         expect(mockEcsDescribeTasks).toHaveBeenNthCalledWith(1, {
             cluster: 'cluster-789',
             tasks:  ['arn:aws:ecs:fake-region:account_id:task/arn']
         });
 
         expect(mockEcsWaiter).toHaveBeenCalledTimes(1);
+        expect(core.setOutput).toBeCalledWith('task-arn', ['arn:aws:ecs:fake-region:account_id:task/arn']);
 
         expect(core.info).toBeCalledWith("All tasks have exited successfully.");
     });
