@@ -126,7 +126,7 @@ async function run() {
 
     // Register the task definition if necessary - or use the passed in ARN
     if (!taskDefinitionFile && !taskDefRevisionArn) {
-      const msg = "Invalid parameters: One of task-definition-file or task-definition-arn must be set";
+      const msg = "Invalid parameters: One of task-definition or task-definition-revision-arn must be set";
       core.setFailed(msg);
       throw new Error(msg);
     }
@@ -157,7 +157,16 @@ async function run() {
     } else {
       core.debug(`Using the passed task definition ARN ${taskDefRevisionArn}`);
     }
+
     core.setOutput('task-definition-arn', taskDefRevisionArn);
+
+    /* Extract task-definition-family & revision ARN, so we can output family:revision
+     * Useful for later using `aws ecs describe-task-definition` to get the full ARN,
+     * since outputting full ARN can be misinterpreted as a secret by Github Actions.
+     */
+    const regex = new RegExp(':task-definition/(.*)$');
+    const matches = taskDefRevisionArn.match(regex);
+    core.setOutput('task-definition-family-and-revision', matches[1])
 
     const clusterName = cluster ? cluster : 'default';
 

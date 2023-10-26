@@ -66,6 +66,8 @@ inputs:
 outputs:
   task-definition-arn:
     description: 'The ARN of the registered ECS task definition'
+  task-definition-family-and-revision:
+    description: 'The family & revision of the registered task definition - eg. "my-task-family:1"'
   task-arn:
     description: 'The ARN of the ECS task'
 runs:
