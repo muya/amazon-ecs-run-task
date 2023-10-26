@@ -5,10 +5,10 @@ branding:
   color: 'orange'
 inputs:
   task-definition:
-    description: 'The name of the file containing the ECS task definition. One of task-definition or task-definition-arn must be provided.'
+    description: 'The name of the file containing the ECS task definition. One of task-definition or task-definition-revision-arn must be provided.'
     required: false
   task-definition-revision-arn:
-    description: 'The ARN of the ECS task defintion revision to run. One of task-definition or task-definition-arn must be provided.'
+    description: 'The ARN of the ECS task defintion revision to run. One of task-definition or task-definition-revision-arn must be provided.'
     required: false
   cluster:
     description: "The name of the ECS cluster. Will default to the 'default' cluster"
