@@ -90,7 +90,7 @@ async function run() {
 
     // Get inputs
     const taskDefinitionFile = core.getInput('task-definition', {
-      required: true,
+      required: false,
     });
     const cluster = core.getInput('cluster', { required: false });
     const count = core.getInput('count', { required: true });
@@ -117,32 +117,47 @@ async function run() {
     const taskExecutionRoleArn = core.getInput('task-execution-role-override', {
       required: false,
     });
+    let taskDefRevisionArn = core.getInput('task-definition-revision-arn', {
+      required: false,
+    });
+    const containerOverridesString = core.getInput('container-overrides', {
+      required: false
+    });
 
-    // Register the task definition
-    core.debug('Registering the task definition');
-    const taskDefPath = path.isAbsolute(taskDefinitionFile)
-      ? taskDefinitionFile
-      : path.join(process.env.GITHUB_WORKSPACE, taskDefinitionFile);
-    const fileContents = fs.readFileSync(taskDefPath, 'utf8');
-    const taskDefContents = removeIgnoredAttributes(
-      cleanNullKeys(yaml.parse(fileContents))
-    );
-
-    let registerResponse;
-    try {
-      registerResponse = await ecs
-        .registerTaskDefinition(taskDefContents)
-        .promise();
-    } catch (error) {
-      core.setFailed(
-        'Failed to register task definition in ECS: ' + error.message
-      );
-      core.debug('Task definition contents:');
-      core.debug(JSON.stringify(taskDefContents, undefined, 2));
-      throw error;
+    // Register the task definition if necessary - or use the passed in ARN
+    if (!taskDefinitionFile && !taskDefRevisionArn) {
+      const msg = "Invalid parameters: One of task-definition-file or task-definition-arn must be set";
+      core.setFailed(msg);
+      throw new Error(msg);
     }
-    const taskDefArn = registerResponse.taskDefinition.taskDefinitionArn;
-    core.setOutput('task-definition-arn', taskDefArn);
+    if (taskDefinitionFile) {
+      core.debug(`Registering the task definition from file ${taskDefinitionFile}`);
+      const taskDefPath = path.isAbsolute(taskDefinitionFile)
+        ? taskDefinitionFile
+        : path.join(process.env.GITHUB_WORKSPACE, taskDefinitionFile);
+      const fileContents = fs.readFileSync(taskDefPath, 'utf8');
+      const taskDefContents = removeIgnoredAttributes(
+        cleanNullKeys(yaml.parse(fileContents))
+      );
+
+      let registerResponse;
+      try {
+        registerResponse = await ecs
+          .registerTaskDefinition(taskDefContents)
+          .promise();
+      } catch (error) {
+        core.setFailed(
+          'Failed to register task definition in ECS: ' + error.message
+        );
+        core.debug('Task definition contents:');
+        core.debug(JSON.stringify(taskDefContents, undefined, 2));
+        throw error;
+      }
+      taskDefRevisionArn = registerResponse.taskDefinition.taskDefinitionArn;
+    } else {
+      core.debug(`Using the passed task definition ARN ${taskDefRevisionArn}`);
+    }
+    core.setOutput('task-definition-arn', taskDefRevisionArn);
 
     const clusterName = cluster ? cluster : 'default';
 
@@ -151,7 +166,7 @@ async function run() {
      */
     const runTaskRequest = {
       cluster: clusterName,
-      taskDefinition: taskDefArn,
+      taskDefinition: taskDefRevisionArn,
       count: count,
       startedBy: startedBy,
     };
@@ -209,6 +224,11 @@ async function run() {
     if (taskExecutionRoleArn) {
       runTaskRequest.overrides = runTaskRequest.overrides || {};
       runTaskRequest.overrides.executionRoleArn = taskExecutionRoleArn;
+    }
+
+    if (containerOverridesString) {
+      runTaskRequest.overrides = runTaskRequest.overrides || {};
+      runTaskRequest.overrides.containerOverrides = JSON.parse(containerOverridesString);
     }
 
     core.debug(

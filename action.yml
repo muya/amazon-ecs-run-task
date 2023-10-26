@@ -5,8 +5,11 @@ branding:
   color: 'orange'
 inputs:
   task-definition:
-    description: 'The name of ECS task definition'
-    required: true
+    description: 'The name of the file containing the ECS task definition. One of task-definition or task-definition-arn must be provided.'
+    required: false
+  task-definition-revision-arn:
+    description: 'The ARN of the ECS task defintion revision to run. One of task-definition or task-definition-arn must be provided.'
+    required: false
   cluster:
     description: "The name of the ECS cluster. Will default to the 'default' cluster"
     required: true
@@ -52,6 +55,13 @@ inputs:
     required: false
   task-execution-role-override:
     description: A role ARN for task execution permissions so that it also is not hardcoded within the task definition
+    required: false
+  container-overrides:
+    description: |
+      A string containing JSON to pass to runTask in the containerOverrides section.
+      For example, can be used to override the command run on each container. 
+      See the AWS documentation for full information on the format:
+      https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_RunTask.html
     required: false
 outputs:
   task-definition-arn:
