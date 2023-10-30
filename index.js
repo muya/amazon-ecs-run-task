@@ -166,9 +166,6 @@ async function run() {
      */
     const regex = new RegExp(':task-definition/(.*)$');
     const matches = taskDefRevisionArn.match(regex);
-    core.info(`taskDefRevisionArn was ${taskDefRevisionArn}`);
-    core.info(`matches is ${JSON.stringify(matches)}`);
-    core.info(`matches[1] is ${matches[1]}`);
     core.setOutput('task-definition-family-and-revision', matches[1])
 
     const clusterName = cluster ? cluster : 'default';
